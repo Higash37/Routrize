@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Plus, Trash2, ImagePlus, ChevronDown, ChevronRight } from "lucide-react";
 import type { RegisteredBook, BookChapter, BookSection } from "@/types/book";
+import { useSubjectPresets } from "@/hooks/use-subject-presets";
 
 type BookFormProps = {
   book: RegisteredBook | null;
@@ -77,12 +78,15 @@ export function BookForm({ book, onSave, onCancel }: BookFormProps) {
 
   return (
     <>
-      {/* オーバーレイ */}
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onCancel} />
-
-      {/* モーダル */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
-        <div className="flex h-full max-h-[640px] w-full max-w-3xl overflow-hidden rounded-lg border bg-white shadow-xl">
+      {/* オーバーレイ + モーダル */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-8"
+        onClick={onCancel}
+      >
+        <div
+          className="flex h-full max-h-[640px] w-full max-w-3xl overflow-hidden rounded-lg border bg-white shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* 左列: 表紙画像 */}
           <div className="flex w-56 shrink-0 flex-col items-center justify-center border-r bg-slate-50 p-6">
             {form.coverImageUrl ? (
@@ -165,6 +169,10 @@ export function BookForm({ book, onSave, onCancel }: BookFormProps) {
                   onUpdate={update}
                   onFieldInputChange={setFieldInput}
                   onTagInputChange={setTagInput}
+                  onTargetGradeChange={(grade) => {
+                    // 学年変更時に教科をリセット
+                    update({ targetGrade: grade, subject: "" });
+                  }}
                 />
               ) : (
                 <ChaptersTab
@@ -206,6 +214,7 @@ function InfoTab({
   onUpdate,
   onFieldInputChange,
   onTagInputChange,
+  onTargetGradeChange,
 }: {
   form: RegisteredBook;
   fieldInput: string;
@@ -213,7 +222,11 @@ function InfoTab({
   onUpdate: (changes: Partial<RegisteredBook>) => void;
   onFieldInputChange: (v: string) => void;
   onTagInputChange: (v: string) => void;
+  onTargetGradeChange: (grade: string) => void;
 }) {
+  const { categories, getSubjects } = useSubjectPresets();
+  const subjects = form.targetGrade ? getSubjects(form.targetGrade) : [];
+
   return (
     <div className="space-y-4">
       {/* タイトル */}
@@ -229,35 +242,44 @@ function InfoTab({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* 教科 */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">教科</label>
-          <input
-            type="text"
-            value={form.subject}
-            onChange={(e) => onUpdate({ subject: e.target.value })}
-            placeholder="例: 英語"
-            className="flex h-8 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
-          />
-        </div>
-
         {/* 対象学年 */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">対象学年</label>
           <select
             value={form.targetGrade}
-            onChange={(e) => onUpdate({ targetGrade: e.target.value })}
+            onChange={(e) => onTargetGradeChange(e.target.value)}
             className="flex h-8 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
           >
             <option value="">未設定</option>
-            <option value="中1">中1</option>
-            <option value="中2">中2</option>
-            <option value="中3">中3</option>
-            <option value="高1">高1</option>
-            <option value="高2">高2</option>
-            <option value="高3">高3</option>
-            <option value="既卒">既卒</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
+        </div>
+
+        {/* 教科 */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">教科</label>
+          {subjects.length > 0 ? (
+            <select
+              value={form.subject}
+              onChange={(e) => onUpdate({ subject: e.target.value })}
+              className="flex h-8 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+            >
+              <option value="">選択してください</option>
+              {subjects.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={form.subject}
+              onChange={(e) => onUpdate({ subject: e.target.value })}
+              placeholder="学年を選択すると候補が表示されます"
+              className="flex h-8 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+            />
+          )}
         </div>
       </div>
 

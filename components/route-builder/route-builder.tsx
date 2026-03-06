@@ -5,7 +5,7 @@ import { routeReducer, INITIAL_ROUTE_STATE } from "@/lib/route-reducer";
 import { useLocalStorageRoute } from "@/hooks/use-local-storage-route";
 import { addMonths, getRouteDateRange, toISODate } from "@/lib/date-utils";
 import { SUBJECT_DEFAULT_COLORS, DEFAULT_ITEM_COLOR } from "@/lib/constants";
-import type { MockBook } from "@/types/route-builder";
+import type { RegisteredBook } from "@/types/book";
 import { RouteHeader } from "./route-header";
 import { BookListSidebar } from "./book-list-sidebar";
 import { RouteGantt } from "./route-gantt";
@@ -26,7 +26,7 @@ export function RouteBuilder() {
   );
 
   const handleAddBook = useCallback(
-    (book: MockBook) => {
+    (book: RegisteredBook) => {
       // デフォルト：開始月の1日〜3ヶ月後
       const start = state.startDate;
       const end = addMonths(start, 3);

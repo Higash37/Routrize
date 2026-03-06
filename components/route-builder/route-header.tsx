@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileText, Save, LogIn, Pencil, Printer, Menu } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
+import { UserMenuPopover } from "@/components/shared/user-menu-popover";
 
 type RouteHeaderProps = {
   title: string;
@@ -26,6 +29,7 @@ export function RouteHeader({
 }: RouteHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [paperSize, setPaperSize] = useState<"A4" | "A3">("A4");
+  const { isLoggedIn, isLoading } = useAuth();
 
   function handlePrint() {
     const style = document.createElement("style");
@@ -125,14 +129,22 @@ export function RouteHeader({
             <Printer className="h-3.5 w-3.5" />
             印刷
           </Button>
-          <Button
-            size="sm"
-            className="h-7 gap-1.5 text-xs bg-[#1F3864] hover:bg-[#2B5797]"
-            disabled
-          >
-            <LogIn className="h-3.5 w-3.5" />
-            ログイン
-          </Button>
+          {isLoading ? (
+            <div className="h-7 w-[5.5rem] rounded" />
+          ) : isLoggedIn ? (
+            <UserMenuPopover />
+          ) : (
+            <Button
+              size="sm"
+              className="h-7 gap-1.5 text-xs bg-[#1F3864] hover:bg-[#2B5797]"
+              asChild
+            >
+              <Link href="/login">
+                <LogIn className="h-3.5 w-3.5" />
+                ログイン
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

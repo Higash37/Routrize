@@ -8,10 +8,15 @@ import { BookForm } from "./book-form";
 import type { RegisteredBook } from "@/types/book";
 import { Menu, Plus, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useAuth } from "@/hooks/use-auth";
+import { UserMenuPopover } from "@/components/shared/user-menu-popover";
+
 
 export function BookManager() {
   const { books, isLoaded, addBook, updateBook, removeBook } = useLocalStorageBooks();
   const [navOpen, setNavOpen] = useState(false);
+  const { isLoggedIn, isLoading } = useAuth();
   const [editingBook, setEditingBook] = useState<RegisteredBook | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -51,14 +56,22 @@ export function BookManager() {
             </button>
             <span className="text-base font-bold text-[#1F3864]">教材登録</span>
           </div>
-          <Button
-            size="sm"
-            className="h-7 gap-1.5 text-xs bg-[#1F3864] hover:bg-[#2B5797]"
-            disabled
-          >
-            <LogIn className="h-3.5 w-3.5" />
-            ログイン
-          </Button>
+          {isLoading ? (
+            <div className="h-7 w-[5.5rem] rounded" />
+          ) : isLoggedIn ? (
+            <UserMenuPopover />
+          ) : (
+            <Button
+              size="sm"
+              className="h-7 gap-1.5 text-xs bg-[#1F3864] hover:bg-[#2B5797]"
+              asChild
+            >
+              <Link href="/login">
+                <LogIn className="h-3.5 w-3.5" />
+                ログイン
+              </Link>
+            </Button>
+          )}
         </div>
       </header>
 

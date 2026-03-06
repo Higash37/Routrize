@@ -64,11 +64,3 @@ export type RouteAction =
   | { type: "REORDER_ITEMS"; itemIds: string[] }
   | { type: "SELECT_ITEM"; itemId: string | null }
   | { type: "LOAD_ROUTE"; state: RouteState };
-
-export type MockBook = {
-  id: string;
-  title: string;
-  subject: string;
-  coverImageUrl: string | null;
-  level: "basic" | "standard" | "advanced";
-};

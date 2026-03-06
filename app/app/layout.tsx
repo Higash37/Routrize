@@ -1,35 +1,33 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
+import { Menu } from "lucide-react";
+import { NavSidebar } from "@/components/shared/nav-sidebar";
 
 export default function AuthLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [navOpen, setNavOpen] = useState(false);
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="hidden w-60 shrink-0 border-r bg-sidebar p-4 md:block">
-        <div className="mb-8 text-lg font-semibold">Routrize</div>
-        <nav className="flex flex-col gap-1 text-sm">
-          <Link
-            href="/app/dashboard"
-            className="rounded-md px-3 py-2 hover:bg-sidebar-accent"
+    <div className="flex h-screen flex-col bg-slate-50">
+      <NavSidebar isOpen={navOpen} onClose={() => setNavOpen(false)} />
+
+      <header className="border-b bg-white">
+        <div className="flex h-12 items-center px-4 gap-3">
+          <button
+            type="button"
+            className="rounded p-1 text-muted-foreground hover:bg-slate-100 transition-colors"
+            onClick={() => setNavOpen(true)}
           >
-            Dashboard
-          </Link>
-          <Link
-            href="/app/routes"
-            className="rounded-md px-3 py-2 hover:bg-sidebar-accent"
-          >
-            Routes
-          </Link>
-          <Link
-            href="/app/students"
-            className="rounded-md px-3 py-2 hover:bg-sidebar-accent"
-          >
-            Students
-          </Link>
-        </nav>
-      </aside>
+            <Menu className="h-5 w-5" />
+          </button>
+          <span className="text-base font-bold text-[#1F3864]">Routrize</span>
+        </div>
+      </header>
+
       <main className="flex-1 overflow-auto">
         <div className="p-6">{children}</div>
       </main>

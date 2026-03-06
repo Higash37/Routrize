@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { X, BookOpen } from "lucide-react";
 import { shortDate } from "@/lib/date-utils";
 import type { RouteItemState } from "@/types/route-builder";
-import type { MockBook } from "@/types/route-builder";
+import type { RegisteredBook } from "@/types/book";
 import { BookPickerModal } from "./book-picker-modal";
 
 type BookListSidebarProps = {
@@ -13,7 +13,7 @@ type BookListSidebarProps = {
   selectedItemId: string | null;
   onSelectItem: (id: string | null) => void;
   onRemoveItem: (id: string) => void;
-  onAddBook: (book: MockBook) => void;
+  onAddBook: (book: RegisteredBook) => void;
 };
 
 export function BookListSidebar({
