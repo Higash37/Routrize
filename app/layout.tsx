@@ -17,6 +17,16 @@ export const metadata: Metadata = {
   title: "Routrize - 参考書ルートを作って、実行を見える化する",
   description:
     "塾講師が参考書ルート（カリキュラム）を高速に作成し、PDF出力・生徒配布・進捗管理までできるWebツール。",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "Routrize - 参考書ルートを作って、実行を見える化する",
+    description:
+      "塾講師が参考書ルート（カリキュラム）を高速に作成し、PDF出力・生徒配布・進捗管理までできるWebツール。",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
+  },
 };
 
 export default function RootLayout({
