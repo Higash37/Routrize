@@ -56,6 +56,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://routrize.com",
   },
+  verification: {
+    google: "ShvGn4mMmRyKthYf96Jw3SJiIsNlAUt4HeMQYwT6-AA",
+  },
 };
 
 export default function RootLayout({
