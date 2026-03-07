@@ -78,7 +78,7 @@ export function ItemSettingsPanel({
   }
 
   return (
-    <div className="flex w-72 shrink-0 flex-col border-l bg-white">
+    <div className="flex w-full md:w-72 shrink-0 flex-col border-l bg-white">
       {/* ヘッダー */}
       <div className="shrink-0 border-b bg-[#1F3864]">
         <div className="flex h-8 items-center justify-between border-b border-[#2B5797] px-3">

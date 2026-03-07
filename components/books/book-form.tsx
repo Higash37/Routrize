@@ -80,15 +80,15 @@ export function BookForm({ book, onSave, onCancel }: BookFormProps) {
     <>
       {/* オーバーレイ + モーダル */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-8"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-8"
         onClick={onCancel}
       >
         <div
-          className="flex h-full max-h-[640px] w-full max-w-3xl overflow-hidden rounded-lg border bg-white shadow-xl"
+          className="flex h-full max-h-[640px] w-full max-w-3xl overflow-hidden rounded-lg border bg-white shadow-xl flex-col sm:flex-row"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 左列: 表紙画像 */}
-          <div className="flex w-56 shrink-0 flex-col items-center justify-center border-r bg-slate-50 p-6">
+          {/* 左列: 表紙画像（スマホでは非表示） */}
+          <div className="hidden sm:flex w-56 shrink-0 flex-col items-center justify-center border-r bg-slate-50 p-6">
             {form.coverImageUrl ? (
               <div className="group relative">
                 <img

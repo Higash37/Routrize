@@ -10,6 +10,7 @@ import { RouteHeader } from "./route-header";
 import { BookListSidebar } from "./book-list-sidebar";
 import { RouteGantt } from "./route-gantt";
 import { ItemSettingsPanel } from "./item-settings-panel";
+import { MobileRouteCards } from "./mobile-route-cards";
 import { NavSidebar } from "@/components/shared/nav-sidebar";
 
 export function RouteBuilder() {
@@ -27,7 +28,6 @@ export function RouteBuilder() {
 
   const handleAddBook = useCallback(
     (book: RegisteredBook) => {
-      // デフォルト：開始月の1日〜3ヶ月後
       const start = state.startDate;
       const end = addMonths(start, 3);
 
@@ -71,26 +71,27 @@ export function RouteBuilder() {
     <div className="flex h-screen flex-col bg-slate-50">
       <NavSidebar isOpen={navOpen} onClose={() => setNavOpen(false)} />
       <div data-print-hide>
-      <RouteHeader
-        title={state.title}
-        startDate={state.startDate}
-        months={state.months}
-        onTitleChange={(title) => dispatch({ type: "SET_TITLE", title })}
-        onStartDateChange={(date) => dispatch({ type: "SET_START_DATE", date })}
-        onMonthsChange={(months) => dispatch({ type: "SET_MONTHS", months })}
-        onMenuOpen={() => setNavOpen(true)}
-      />
+        <RouteHeader
+          title={state.title}
+          startDate={state.startDate}
+          months={state.months}
+          onTitleChange={(title) => dispatch({ type: "SET_TITLE", title })}
+          onStartDateChange={(date) => dispatch({ type: "SET_START_DATE", date })}
+          onMonthsChange={(months) => dispatch({ type: "SET_MONTHS", months })}
+          onMenuOpen={() => setNavOpen(true)}
+        />
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      {/* PC: サイドバー + ガント + 設定パネル */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
         <div data-print-hide className="flex shrink-0">
-        <BookListSidebar
-          items={state.items}
-          selectedItemId={state.selectedItemId}
-          onSelectItem={handleSelectItem}
-          onRemoveItem={handleRemoveItem}
-          onAddBook={handleAddBook}
-        />
+          <BookListSidebar
+            items={state.items}
+            selectedItemId={state.selectedItemId}
+            onSelectItem={handleSelectItem}
+            onRemoveItem={handleRemoveItem}
+            onAddBook={handleAddBook}
+          />
         </div>
 
         <RouteGantt
@@ -103,20 +104,49 @@ export function RouteBuilder() {
 
         {selectedItem && (
           <div data-print-hide className="flex shrink-0">
-          <ItemSettingsPanel
-            item={selectedItem}
-            routeStartDate={state.startDate}
-            routeEndDate={toISODate(routeEnd)}
-            onUpdate={(changes) =>
-              dispatch({
-                type: "UPDATE_ITEM",
-                itemId: selectedItem.id,
-                changes,
-              })
-            }
-            onClose={() => handleSelectItem(null)}
-          />
+            <ItemSettingsPanel
+              item={selectedItem}
+              routeStartDate={state.startDate}
+              routeEndDate={toISODate(routeEnd)}
+              onUpdate={(changes) =>
+                dispatch({
+                  type: "UPDATE_ITEM",
+                  itemId: selectedItem.id,
+                  changes,
+                })
+              }
+              onClose={() => handleSelectItem(null)}
+            />
           </div>
+        )}
+      </div>
+
+      {/* モバイル: カードリスト + 設定パネル（フルスクリーン） */}
+      <div className="flex md:hidden flex-1 flex-col overflow-hidden">
+        {selectedItem ? (
+          <div className="flex-1 overflow-y-auto">
+            <ItemSettingsPanel
+              item={selectedItem}
+              routeStartDate={state.startDate}
+              routeEndDate={toISODate(routeEnd)}
+              onUpdate={(changes) =>
+                dispatch({
+                  type: "UPDATE_ITEM",
+                  itemId: selectedItem.id,
+                  changes,
+                })
+              }
+              onClose={() => handleSelectItem(null)}
+            />
+          </div>
+        ) : (
+          <MobileRouteCards
+            items={state.items}
+            selectedItemId={state.selectedItemId}
+            onSelectItem={handleSelectItem}
+            onRemoveItem={handleRemoveItem}
+            onAddBook={handleAddBook}
+          />
         )}
       </div>
     </div>
