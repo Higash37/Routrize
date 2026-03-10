@@ -81,6 +81,12 @@ export function BookManager() {
           books={books}
           onEdit={setEditingBook}
           onRemove={removeBook}
+          onTogglePublish={(id, published) =>
+            updateBook(id, {
+              visibility: published ? "public" : "private",
+              publishedAt: published ? new Date().toISOString() : null,
+            })
+          }
         />
       </div>
 

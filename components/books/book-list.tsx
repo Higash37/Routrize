@@ -1,16 +1,19 @@
 "use client";
 
-import { BookMarked, Pencil, Trash2 } from "lucide-react";
+import { BookMarked, Pencil, Trash2, Globe, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RegisteredBook } from "@/types/book";
+import { useAuth } from "@/hooks/use-auth";
 
 type BookListProps = {
   books: RegisteredBook[];
   onEdit: (book: RegisteredBook) => void;
   onRemove: (id: string) => void;
+  onTogglePublish?: (id: string, published: boolean) => void;
 };
 
-export function BookList({ books, onEdit, onRemove }: BookListProps) {
+export function BookList({ books, onEdit, onRemove, onTogglePublish }: BookListProps) {
+  const { isLoggedIn } = useAuth();
   if (books.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
@@ -81,6 +84,23 @@ export function BookList({ books, onEdit, onRemove }: BookListProps) {
 
             {/* アクション */}
             <div className="flex shrink-0 gap-1">
+              {isLoggedIn && onTogglePublish && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-8 w-8 ${book.visibility === "public" ? "text-green-500" : "text-muted-foreground"}`}
+                  title={book.visibility === "public" ? "公開中（クリックで非公開に）" : "非公開（クリックで公開に）"}
+                  onClick={() =>
+                    onTogglePublish(book.id, book.visibility !== "public")
+                  }
+                >
+                  {book.visibility === "public" ? (
+                    <Globe className="h-3.5 w-3.5" />
+                  ) : (
+                    <Lock className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"

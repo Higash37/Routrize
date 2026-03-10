@@ -8,6 +8,7 @@ export async function updateSession(request: NextRequest) {
   if (
     pathname === "/" ||
     pathname === "/books" ||
+    pathname === "/join" ||
     pathname.startsWith("/s") ||
     pathname.startsWith("/auth")
   ) {
