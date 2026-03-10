@@ -8,6 +8,7 @@ import { shortDate } from "@/lib/date-utils";
 import type { RouteItemState, RouteItemUpdatable, SubTask, BookChapter, BookSection } from "@/types/route-builder";
 import { getSubTaskSize } from "@/types/route-builder";
 import { ColorPickerPopover } from "./color-picker-popover";
+import { useSubjectPresets } from "@/hooks/use-subject-presets";
 
 type ItemSettingsPanelProps = {
   item: RouteItemState;
@@ -63,6 +64,10 @@ export function ItemSettingsPanel({
   const [fieldInput, setFieldInput] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("info");
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
+  const { categories, getSubjects } = useSubjectPresets();
+
+  // 対象学年に応じた教科候補
+  const subjectOptions = item.targetGrade ? getSubjects(item.targetGrade) : [];
 
   const days = Math.round(
     (new Date(item.endDate).getTime() - new Date(item.startDate).getTime()) /
@@ -116,18 +121,59 @@ export function ItemSettingsPanel({
       <div className="flex-1 space-y-4 overflow-y-auto p-3">
         {activeTab === "info" && (
           <>
+            {/* 対象学年 */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground">
+                対象学年
+              </label>
+              <select
+                value={item.targetGrade}
+                onChange={(e) => onUpdate({ targetGrade: e.target.value })}
+                className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+              >
+                <option value="">未設定</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
             {/* 教科 */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-muted-foreground">
                 教科
               </label>
-              <input
-                type="text"
-                value={item.subject}
-                onChange={(e) => onUpdate({ subject: e.target.value })}
-                placeholder="例: 英語"
-                className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
-              />
+              {subjectOptions.length > 0 ? (
+                <>
+                  <select
+                    value={subjectOptions.includes(item.subject) ? item.subject : ""}
+                    onChange={(e) => {
+                      if (e.target.value) onUpdate({ subject: e.target.value });
+                    }}
+                    className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+                  >
+                    <option value="">選択してください</option>
+                    {subjectOptions.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={item.subject}
+                    onChange={(e) => onUpdate({ subject: e.target.value })}
+                    placeholder="または手入力"
+                    className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+                  />
+                </>
+              ) : (
+                <input
+                  type="text"
+                  value={item.subject}
+                  onChange={(e) => onUpdate({ subject: e.target.value })}
+                  placeholder="例: 英語"
+                  className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+                />
+              )}
             </div>
 
             {/* 分野 */}
@@ -199,27 +245,6 @@ export function ItemSettingsPanel({
                 value={item.color}
                 onChange={(color) => onUpdate({ color })}
               />
-            </div>
-
-            {/* 対象学年 */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-muted-foreground">
-                対象学年
-              </label>
-              <select
-                value={item.targetGrade}
-                onChange={(e) => onUpdate({ targetGrade: e.target.value })}
-                className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
-              >
-                <option value="">未設定</option>
-                <option value="中1">中1</option>
-                <option value="中2">中2</option>
-                <option value="中3">中3</option>
-                <option value="高1">高1</option>
-                <option value="高2">高2</option>
-                <option value="高3">高3</option>
-                <option value="既卒">既卒</option>
-              </select>
             </div>
 
             {/* タグ */}
