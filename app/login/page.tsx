@@ -129,20 +129,6 @@ export default function LoginPage() {
         </div>
 
         <form action={handleSubmit} className="space-y-4">
-          {isSignUp && (
-            <div className="space-y-1.5">
-              <label htmlFor="orgName" className="text-sm font-medium">
-                塾名
-              </label>
-              <Input
-                id="orgName"
-                name="orgName"
-                type="text"
-                placeholder="例: ○○学習塾"
-              />
-            </div>
-          )}
-
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium">
               メールアドレス

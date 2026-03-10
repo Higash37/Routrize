@@ -2,9 +2,10 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState, useTransition } from "react";
-import { Building2, Store, Plus, Pencil, Trash2, Check, X, Copy, UserPlus } from "lucide-react";
+import { Building2, Store, Plus, Pencil, Trash2, Check, X, Copy, UserPlus, Users } from "lucide-react";
 import type { OrganizationRow, StoreRow, MembershipRow } from "@/types/database";
 import { getOrgData, updateOrgName, addStore, updateStoreName, deleteStore } from "./actions";
+import type { StoreMember } from "./actions";
 import { generateInviteCode } from "./invite-actions";
 
 export default function SettingsPage() {
@@ -12,6 +13,7 @@ export default function SettingsPage() {
   const [org, setOrg] = useState<OrganizationRow | null>(null);
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [membership, setMembership] = useState<MembershipRow | null>(null);
+  const [membersByStore, setMembersByStore] = useState<Record<string, StoreMember[]>>({});
   const [loading, setLoading] = useState(true);
 
   const reload = async () => {
@@ -19,6 +21,7 @@ export default function SettingsPage() {
     setOrg(data.organization);
     setStores(data.stores);
     setMembership(data.membership);
+    setMembersByStore(data.membersByStore);
     setLoading(false);
   };
 
@@ -83,6 +86,7 @@ export default function SettingsPage() {
               <StoreCard
                 key={store.id}
                 store={store}
+                members={membersByStore[store.id] ?? []}
                 canDelete={stores.length > 1}
                 onUpdated={reload}
               />
@@ -178,13 +182,21 @@ function OrgNameEditor({
   );
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: "オーナー",
+  admin: "管理者",
+  teacher: "講師",
+};
+
 /** 店舗カード */
 function StoreCard({
   store,
+  members,
   canDelete,
   onUpdated,
 }: {
   store: StoreRow;
+  members: StoreMember[];
   canDelete: boolean;
   onUpdated: () => void;
 }) {
@@ -319,7 +331,7 @@ function StoreCard({
       )}
 
       {inviteCode && (
-        <div className="col-span-full mt-2 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2">
+        <div className="w-full mt-2 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2">
           <p className="text-xs text-blue-700">招待コード（1時間有効）:</p>
           <code className="rounded bg-white px-2 py-0.5 font-mono text-sm font-bold tracking-widest text-blue-900">
             {inviteCode}
@@ -340,6 +352,36 @@ function StoreCard({
           >
             <X className="h-3.5 w-3.5" />
           </button>
+        </div>
+      )}
+
+      {/* メンバー一覧 */}
+      {members.length > 0 && (
+        <div className="w-full mt-2 border-t pt-2">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Users className="h-3.5 w-3.5 text-slate-400" />
+            <p className="text-xs font-medium text-slate-500">
+              メンバー（{members.length}）
+            </p>
+          </div>
+          <div className="space-y-1">
+            {members.map((member) => (
+              <div
+                key={member.userId}
+                className="flex items-center gap-3 rounded px-2 py-1.5 text-sm"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600">
+                  {member.email ? member.email[0].toUpperCase() : "?"}
+                </div>
+                <span className="flex-1 min-w-0 truncate text-xs text-slate-700">
+                  {member.email || "---"}
+                </span>
+                <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
+                  {ROLE_LABELS[member.role] ?? member.role}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

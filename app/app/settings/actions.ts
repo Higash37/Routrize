@@ -6,11 +6,20 @@ import type { OrganizationRow, StoreRow, MembershipRow } from "@/types/database"
 
 type ActionResult = { error: string | null };
 
+export type StoreMember = {
+  userId: string;
+  email: string;
+  role: string;
+  joinedAt: string;
+};
+
 /** ログインユーザーの組織・店舗・メンバーシップを取得 */
 export async function getOrgData(): Promise<{
   organization: OrganizationRow | null;
   stores: StoreRow[];
   membership: MembershipRow | null;
+  /** storeId → メンバー一覧 */
+  membersByStore: Record<string, StoreMember[]>;
   error: string | null;
 }> {
   const supabase = await createClient();
@@ -18,7 +27,7 @@ export async function getOrgData(): Promise<{
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { organization: null, stores: [], membership: null, error: "未認証" };
+  if (!user) return { organization: null, stores: [], membership: null, membersByStore: {}, error: "未認証" };
 
   const admin = createAdminClient();
 
@@ -30,26 +39,59 @@ export async function getOrgData(): Promise<{
     .limit(1)
     .single();
 
-  if (!membership) return { organization: null, stores: [], membership: null, error: null };
+  if (!membership) return { organization: null, stores: [], membership: null, membersByStore: {}, error: null };
 
-  // 組織取得
-  const { data: org } = await admin
-    .from("organizations")
-    .select("*")
-    .eq("id", membership.organization_id)
-    .single();
+  // 組織取得 + 店舗一覧 + 組織全体のメンバーシップを並列取得
+  const [orgResult, storesResult, allMembershipsResult] = await Promise.all([
+    admin
+      .from("organizations")
+      .select("*")
+      .eq("id", membership.organization_id)
+      .single(),
+    admin
+      .from("stores")
+      .select("*")
+      .eq("organization_id", membership.organization_id)
+      .order("created_at", { ascending: true }),
+    admin
+      .from("memberships")
+      .select("*")
+      .eq("organization_id", membership.organization_id),
+  ]);
 
-  // 店舗一覧取得
-  const { data: stores } = await admin
-    .from("stores")
-    .select("*")
-    .eq("organization_id", membership.organization_id)
-    .order("created_at", { ascending: true });
+  const allMemberships = (allMembershipsResult.data ?? []) as MembershipRow[];
+
+  // ユニークなuser_idを集めてメール取得
+  const userIds = [...new Set(allMemberships.map((m) => m.user_id))];
+  const membersByStore: Record<string, StoreMember[]> = {};
+
+  if (userIds.length > 0) {
+    const userMap = new Map<string, string>();
+    // admin.auth.admin.listUsers は最大1000件返す
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    for (const u of users) {
+      if (userIds.includes(u.id)) {
+        userMap.set(u.id, u.email ?? "");
+      }
+    }
+
+    for (const m of allMemberships) {
+      const storeId = m.store_id;
+      if (!membersByStore[storeId]) membersByStore[storeId] = [];
+      membersByStore[storeId].push({
+        userId: m.user_id,
+        email: userMap.get(m.user_id) ?? "",
+        role: m.role,
+        joinedAt: m.created_at,
+      });
+    }
+  }
 
   return {
-    organization: org ?? null,
-    stores: stores ?? [],
+    organization: orgResult.data ?? null,
+    stores: storesResult.data ?? [],
     membership: membership as MembershipRow,
+    membersByStore,
     error: null,
   };
 }
