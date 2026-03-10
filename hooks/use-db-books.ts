@@ -2,25 +2,17 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { RegisteredBook } from "@/types/book";
-import { useAuth } from "./use-auth";
 
 /** ログイン時: DB から教材を取得・保存するフック（API 1回で完結） */
 export function useDbBooks() {
-  const { isLoggedIn, isLoading: authLoading } = useAuth();
   const [books, setBooks] = useState<RegisteredBook[]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isDbLoaded, setIsDbLoaded] = useState(false);
   const booksRef = useRef(books);
   booksRef.current = books;
 
-  // 1回の API で認証→組織→教材をまとめて取得
+  // マウント時に即座にAPI呼び出し（サーバー側でauth確認するので待つ必要なし）
   useEffect(() => {
-    if (authLoading) return;
-    if (!isLoggedIn) {
-      setIsDbLoaded(true);
-      return;
-    }
-
     fetch("/api/my-books")
       .then((res) => res.json())
       .then((data) => {
@@ -29,7 +21,7 @@ export function useDbBooks() {
         setIsDbLoaded(true);
       })
       .catch(() => setIsDbLoaded(true));
-  }, [isLoggedIn, authLoading]);
+  }, []);
 
   const addBook = useCallback(
     async (book: RegisteredBook) => {
