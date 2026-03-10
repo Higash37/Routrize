@@ -43,9 +43,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "未認証" }, { status: 401 });
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return NextResponse.json({ error: "未認証" }, { status: 401 });
+  const user = session.user;
 
   const body = await request.json();
   const admin = createAdminClient();

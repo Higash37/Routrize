@@ -23,11 +23,13 @@ export async function getOrgData(): Promise<{
   error: string | null;
 }> {
   const supabase = await createClient();
+  // getSession()はcookie読み取りのみで即座に完了（getUser()はネットワーク往復~1.5秒）
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) return { organization: null, stores: [], membership: null, membersByStore: {}, error: "未認証" };
+  if (!session?.user) return { organization: null, stores: [], membership: null, membersByStore: {}, error: "未認証" };
+  const user = session.user;
 
   const admin = createAdminClient();
 
@@ -67,11 +69,13 @@ export async function getOrgData(): Promise<{
 
   if (userIds.length > 0) {
     const userMap = new Map<string, string>();
-    // admin.auth.admin.listUsers は最大1000件返す
-    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
-    for (const u of users) {
-      if (userIds.includes(u.id)) {
-        userMap.set(u.id, u.email ?? "");
+    // 必要なユーザーだけ並列取得（listUsersで全件取得するより高速）
+    const userResults = await Promise.all(
+      userIds.map((id) => admin.auth.admin.getUserById(id))
+    );
+    for (const result of userResults) {
+      if (result.data?.user) {
+        userMap.set(result.data.user.id, result.data.user.email ?? "");
       }
     }
 

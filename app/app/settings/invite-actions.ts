@@ -11,9 +11,10 @@ export async function generateInviteCode(
 ): Promise<{ code: string | null; error: string | null }> {
   const supabase = await createClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { code: null, error: "未認証" };
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return { code: null, error: "未認証" };
+  const user = session.user;
 
   const admin = createAdminClient();
 
@@ -46,9 +47,10 @@ export async function generateInviteCode(
 export async function joinWithCode(code: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "ログインが必要です" };
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return { error: "ログインが必要です" };
+  const user = session.user;
 
   const admin = createAdminClient();
 

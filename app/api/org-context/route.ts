@@ -4,13 +4,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET() {
   const supabase = await createClient();
+  // getSession()はcookie読み取りのみで即座に完了
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.user) {
     return NextResponse.json({ organizationId: null, storeId: null, role: null });
   }
+  const user = session.user;
 
   const admin = createAdminClient();
   const { data: membership } = await admin
