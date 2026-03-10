@@ -5,11 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /** 認証 → 組織取得 → 教材取得 を1回で行う */
 export async function GET() {
   const supabase = await createClient();
+  // getSession()はcookieのJWTを読むだけで高速（getUser()はネットワーク往復~1秒）
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.user) {
     return NextResponse.json({ books: [], organizationId: null });
   }
 
@@ -19,7 +20,7 @@ export async function GET() {
   const { data: memberships } = await admin
     .from("memberships")
     .select("organization_id")
-    .eq("user_id", user.id);
+    .eq("user_id", session.user.id);
 
   if (!memberships || memberships.length === 0) {
     return NextResponse.json({ books: [], organizationId: null });
