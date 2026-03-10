@@ -143,37 +143,18 @@ export function ItemSettingsPanel({
               <label className="text-[11px] font-medium text-muted-foreground">
                 教科
               </label>
-              {subjectOptions.length > 0 ? (
-                <>
-                  <select
-                    value={subjectOptions.includes(item.subject) ? item.subject : ""}
-                    onChange={(e) => {
-                      if (e.target.value) onUpdate({ subject: e.target.value });
-                    }}
-                    className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
-                  >
-                    <option value="">選択してください</option>
-                    {subjectOptions.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={item.subject}
-                    onChange={(e) => onUpdate({ subject: e.target.value })}
-                    placeholder="または手入力"
-                    className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
-                  />
-                </>
-              ) : (
-                <input
-                  type="text"
-                  value={item.subject}
-                  onChange={(e) => onUpdate({ subject: e.target.value })}
-                  placeholder="例: 英語"
-                  className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
-                />
-              )}
+              <select
+                value={subjectOptions.includes(item.subject) ? item.subject : ""}
+                onChange={(e) => onUpdate({ subject: e.target.value })}
+                className="flex h-7 w-full rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+              >
+                <option value="">
+                  {subjectOptions.length > 0 ? "選択してください" : "対象学年を先に選択"}
+                </option>
+                {subjectOptions.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
 
             {/* 分野 */}
