@@ -11,7 +11,7 @@ export function useBooks() {
   const ls = useLocalStorageBooks();
   const db = useDbBooks();
 
-  // 認証ロード中はどちらも使わない
+  // 認証ロード中
   if (authLoading) {
     return {
       books: [] as RegisteredBook[],

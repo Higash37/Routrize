@@ -1,46 +1,55 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { RegisteredBook } from "@/types/book";
-import { useOrgContext } from "./use-org-context";
+import { useAuth } from "./use-auth";
 
-/** ログイン時: DB から教材を取得・保存するフック */
+/** ログイン時: DB から教材を取得・保存するフック（API 1回で完結） */
 export function useDbBooks() {
-  const { organizationId, isLoaded } = useOrgContext();
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
   const [books, setBooks] = useState<RegisteredBook[]>([]);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [isDbLoaded, setIsDbLoaded] = useState(false);
+  const booksRef = useRef(books);
+  booksRef.current = books;
 
-  // DB から取得
+  // 1回の API で認証→組織→教材をまとめて取得
   useEffect(() => {
-    if (!isLoaded || !organizationId) {
-      if (isLoaded) setIsDbLoaded(true);
+    if (authLoading) return;
+    if (!isLoggedIn) {
+      setIsDbLoaded(true);
       return;
     }
 
-    fetch(`/api/books?orgId=${organizationId}`)
+    fetch("/api/my-books")
       .then((res) => res.json())
       .then((data) => {
         setBooks(data.books ?? []);
+        setOrganizationId(data.organizationId ?? null);
         setIsDbLoaded(true);
       })
       .catch(() => setIsDbLoaded(true));
-  }, [organizationId, isLoaded]);
+  }, [isLoggedIn, authLoading]);
 
   const addBook = useCallback(
     async (book: RegisteredBook) => {
       if (!organizationId) return;
-      const res = await fetch("/api/books", {
+      // 楽観的更新
+      setBooks((prev) => [{ ...book, organizationId }, ...prev]);
+      fetch("/api/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...book, organizationId }),
-      });
-      const data = await res.json();
-      if (data.id) {
-        setBooks((prev) => [
-          { ...book, id: data.id, organizationId },
-          ...prev,
-        ]);
-      }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.id) {
+            setBooks((prev) =>
+              prev.map((b) => (b.id === book.id ? { ...b, id: data.id } : b)),
+            );
+          }
+        })
+        .catch(() => {});
     },
     [organizationId],
   );
@@ -50,21 +59,21 @@ export function useDbBooks() {
       setBooks((prev) =>
         prev.map((b) => (b.id === id ? { ...b, ...changes } : b)),
       );
-      const book = books.find((b) => b.id === id);
+      const book = booksRef.current.find((b) => b.id === id);
       if (book) {
-        await fetch("/api/books", {
+        fetch("/api/books", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...book, ...changes, dbId: id, organizationId }),
-        });
+        }).catch(() => {});
       }
     },
-    [books, organizationId],
+    [organizationId],
   );
 
   const removeBook = useCallback(async (id: string) => {
     setBooks((prev) => prev.filter((b) => b.id !== id));
-    await fetch(`/api/books?id=${id}`, { method: "DELETE" });
+    fetch(`/api/books?id=${id}`, { method: "DELETE" }).catch(() => {});
   }, []);
 
   return { books, isLoaded: isDbLoaded, addBook, updateBook, removeBook, organizationId };

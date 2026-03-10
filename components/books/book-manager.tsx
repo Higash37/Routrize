@@ -21,21 +21,20 @@ export function BookManager() {
   const [isCreating, setIsCreating] = useState(false);
 
   function handleSave(book: RegisteredBook) {
+    // UI を即閉じて、バックグラウンドで保存
+    setEditingBook(null);
+    setIsCreating(false);
     if (editingBook) {
       updateBook(book.id, book);
     } else {
       addBook(book);
     }
-    setEditingBook(null);
-    setIsCreating(false);
   }
 
   function handleCancel() {
     setEditingBook(null);
     setIsCreating(false);
   }
-
-  if (!isLoaded) return null;
 
   const showForm = isCreating || editingBook !== null;
 
@@ -77,6 +76,19 @@ export function BookManager() {
 
       {/* コンテンツ */}
       <div className="flex-1 overflow-y-auto">
+        {!isLoaded ? (
+          <div className="mx-auto max-w-3xl p-3 sm:p-6 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4 rounded-lg border bg-white p-4">
+                <div className="h-16 w-12 rounded bg-slate-200 animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-48 rounded bg-slate-200 animate-pulse" />
+                  <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <BookList
           books={books}
           onEdit={setEditingBook}
@@ -88,6 +100,7 @@ export function BookManager() {
             })
           }
         />
+        )}
       </div>
 
       {/* モーダル */}
