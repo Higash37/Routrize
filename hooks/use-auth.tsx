@@ -19,9 +19,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
-    supabase.auth.getUser().then(({ data }) => {
-      setIsLoggedIn(!!data.user);
-      setEmail(data.user?.email ?? "");
+    // getSession()はcookieのJWT読み取りで即座に完了（getUser()はネットワーク往復~1.5秒）
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session?.user);
+      setEmail(session?.user?.email ?? "");
       setIsLoading(false);
     });
 
