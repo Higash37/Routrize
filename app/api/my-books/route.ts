@@ -15,25 +15,23 @@ export async function GET() {
 
   const admin = createAdminClient();
 
-  // メンバーシップ取得
-  const { data: membership } = await admin
+  // 全メンバーシップ取得（複数組織に所属している場合がある）
+  const { data: memberships } = await admin
     .from("memberships")
     .select("organization_id")
-    .eq("user_id", user.id)
-    .limit(1)
-    .single();
+    .eq("user_id", user.id);
 
-  if (!membership) {
+  if (!memberships || memberships.length === 0) {
     return NextResponse.json({ books: [], organizationId: null });
   }
 
-  const orgId = membership.organization_id;
+  const orgIds = [...new Set(memberships.map((m) => m.organization_id))];
 
-  // 教材取得
+  // 所属する全組織の教材を取得
   const { data: books } = await admin
     .from("books")
     .select("*")
-    .eq("organization_id", orgId)
+    .in("organization_id", orgIds)
     .order("created_at", { ascending: false });
 
   const mapped = (books ?? []).map((b) => ({
@@ -57,5 +55,6 @@ export async function GET() {
     likeCount: b.like_count ?? 0,
   }));
 
-  return NextResponse.json({ books: mapped, organizationId: orgId });
+  // 最初の組織IDを返す（教材追加時のデフォルト）
+  return NextResponse.json({ books: mapped, organizationId: orgIds[0] });
 }
