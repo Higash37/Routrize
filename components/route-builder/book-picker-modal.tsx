@@ -17,15 +17,25 @@ import type { RegisteredBook } from "@/types/book";
 type BookPickerModalProps = {
   existingBookIds: string[];
   onAdd: (book: RegisteredBook) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function BookPickerModal({
   existingBookIds,
   onAdd,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: BookPickerModalProps) {
   const { books } = useBooks();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled
+    ? (v: boolean) => controlledOnOpenChange?.(v)
+    : setInternalOpen;
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -45,15 +55,17 @@ export function BookPickerModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <Plus className="h-3 w-3" />
-          追加
-        </button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <Plus className="h-3 w-3" />
+            追加
+          </button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>教材を追加</DialogTitle>

@@ -8,9 +8,17 @@ import { dateToPercent, getTotalDays, shortDate } from "@/lib/date-utils";
 import { GanttBar, textColorFor } from "./gantt-bar";
 
 /** メイン行の高さ */
-const MAIN_ROW_H = 90;
+export const MAIN_ROW_H = 90;
 /** サブタスク1行の高さ */
-const SUB_ROW_H = 30;
+export const SUB_ROW_H = 30;
+
+/** アイテムの表示高さを計算（教科列のrowspan計算用） */
+export function getRowHeight(item: RouteItemState, months: number): number {
+  const visibleSubs = item.subtasks.filter(
+    (sub) => months <= SIZE_MAX_MONTHS[getSubTaskSize(sub.startDate, sub.endDate)],
+  );
+  return MAIN_ROW_H + visibleSubs.length * SUB_ROW_H;
+}
 
 /** サイズごとの表示閾値（この月数以下で表示） */
 const SIZE_MAX_MONTHS: Record<SubTaskSize, number> = {

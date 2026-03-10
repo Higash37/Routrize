@@ -107,11 +107,26 @@ body {
     display: none !important;
   }
 
+  /* PC版ガントを印刷時に常に表示（md breakpointに依存しない） */
+  [data-print-desktop] {
+    display: flex !important;
+  }
+
+  /* モバイル版を印刷時に非表示 */
+  [data-print-mobile-hide] {
+    display: none !important;
+  }
+
   /* ガントチャート領域を全幅・高さ制限解除 */
   [data-print-gantt] {
     flex: 1 1 auto !important;
     overflow: visible !important;
     height: auto !important;
+  }
+
+  /* stickyヘッダーを印刷時はstaticに（欠落・重複防止） */
+  [data-print-gantt] .sticky {
+    position: relative !important;
   }
 
   /* body/htmlの高さ制限を解除 */
