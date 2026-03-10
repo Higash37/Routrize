@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, BookOpen } from "lucide-react";
-import { useLocalStorageBooks } from "@/hooks/use-local-storage-books";
+import { useBooks } from "@/hooks/use-books";
 import type { RegisteredBook } from "@/types/book";
 
 type BookPickerModalProps = {
@@ -23,7 +23,7 @@ export function BookPickerModal({
   existingBookIds,
   onAdd,
 }: BookPickerModalProps) {
-  const { books } = useLocalStorageBooks();
+  const { books } = useBooks();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 

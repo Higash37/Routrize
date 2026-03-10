@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import type { RouteState, RouteItemState } from "@/types/route-builder";
 import { DEFAULT_ITEM_COLOR } from "@/lib/constants";
 
@@ -48,11 +49,15 @@ export function useLocalStorageRoute(
   state: RouteState,
   dispatch: React.Dispatch<{ type: "LOAD_ROUTE"; state: RouteState }>,
 ) {
+  const { isLoggedIn, isLoading } = useAuth();
   const isInitialized = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ログイン時は localStorage を使わない（useDbRoute が担当）
   // 初回読み込み
   useEffect(() => {
+    if (isLoading) return;
+    if (isLoggedIn) return;
     if (isInitialized.current) return;
     isInitialized.current = true;
 
@@ -73,9 +78,9 @@ export function useLocalStorageRoute(
     }
   }, [dispatch]);
 
-  // debounce保存
+  // debounce保存（ゲストのみ）
   useEffect(() => {
-    if (!isInitialized.current) return;
+    if (!isInitialized.current || isLoggedIn) return;
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {

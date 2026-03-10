@@ -3,6 +3,8 @@
 import { useReducer, useCallback, useMemo, useState } from "react";
 import { routeReducer, INITIAL_ROUTE_STATE } from "@/lib/route-reducer";
 import { useLocalStorageRoute } from "@/hooks/use-local-storage-route";
+import { useDbRoute } from "@/hooks/use-db-route";
+import { useAuth } from "@/hooks/use-auth";
 import { addMonths, getRouteDateRange, toISODate } from "@/lib/date-utils";
 import { SUBJECT_DEFAULT_COLORS, DEFAULT_ITEM_COLOR } from "@/lib/constants";
 import type { RegisteredBook } from "@/types/book";
@@ -16,7 +18,16 @@ import { NavSidebar } from "@/components/shared/nav-sidebar";
 export function RouteBuilder() {
   const [state, dispatch] = useReducer(routeReducer, INITIAL_ROUTE_STATE);
   const [navOpen, setNavOpen] = useState(false);
+  const [dbId, setDbId] = useState<string | undefined>(undefined);
+  const { isLoggedIn } = useAuth();
+
+  // ゲスト: localStorage、ログイン: DB
   useLocalStorageRoute(state, dispatch);
+  useDbRoute(
+    { ...state, dbId },
+    dispatch,
+    setDbId,
+  );
 
   const selectedItem =
     state.items.find((i) => i.id === state.selectedItemId) ?? null;

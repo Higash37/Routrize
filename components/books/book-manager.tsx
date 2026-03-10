@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocalStorageBooks } from "@/hooks/use-local-storage-books";
+import { useBooks } from "@/hooks/use-books";
 import { NavSidebar } from "@/components/shared/nav-sidebar";
 import { BookList } from "./book-list";
 import { BookForm } from "./book-form";
@@ -14,7 +14,7 @@ import { UserMenuPopover } from "@/components/shared/user-menu-popover";
 
 
 export function BookManager() {
-  const { books, isLoaded, addBook, updateBook, removeBook } = useLocalStorageBooks();
+  const { books, isLoaded, addBook, updateBook, removeBook } = useBooks();
   const [navOpen, setNavOpen] = useState(false);
   const { isLoggedIn, isLoading } = useAuth();
   const [editingBook, setEditingBook] = useState<RegisteredBook | null>(null);
