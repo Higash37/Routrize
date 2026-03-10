@@ -48,13 +48,15 @@ function migrateItems(items: RouteItemState[]): RouteItemState[] {
 export function useLocalStorageRoute(
   state: RouteState,
   dispatch: React.Dispatch<{ type: "LOAD_ROUTE"; state: RouteState }>,
+  skipLoad = false,
 ) {
   const { isLoggedIn, isLoading } = useAuth();
-  const isInitialized = useRef(false);
+  const isInitialized = useRef(skipLoad);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<string | null>(null);
 
-  // ログイン時は localStorage を使わない（useDbRoute が担当）
-  // 初回読み込み
+  // auth読み込み完了後にlocalStorageからデータ復元（ゲストのみ）
+  // skipLoad=true の場合はキャッシュから復元済みなのでスキップ
   useEffect(() => {
     if (isLoading) return;
     if (isLoggedIn) return;
@@ -69,32 +71,54 @@ export function useLocalStorageRoute(
           parsed.items = migrateItems(parsed.items);
           dispatch({ type: "LOAD_ROUTE", state: parsed });
         } else {
-          // 古い形式のデータは削除
           localStorage.removeItem(GUEST_ROUTE_KEY);
         }
       }
     } catch {
       localStorage.removeItem(GUEST_ROUTE_KEY);
     }
-  }, [dispatch]);
+  }, [dispatch, isLoading, isLoggedIn]);
 
   // debounce保存（ゲストのみ）
+  // ★ cleanup でタイマーを消さない（再レンダリングでタイマーが殺されるバグ防止）
   useEffect(() => {
     if (!isInitialized.current || isLoggedIn) return;
 
+    const stateStr = JSON.stringify(state);
+    pendingRef.current = stateStr;
+
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      pendingRef.current = null;
       try {
-        localStorage.setItem(GUEST_ROUTE_KEY, JSON.stringify(state));
+        localStorage.setItem(GUEST_ROUTE_KEY, stateStr);
       } catch {
         // storage full等は無視
       }
     }, DEBOUNCE_MS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, isLoggedIn]);
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+  // ページ離脱・コンポーネントunmount時に未保存データをflush
+  useEffect(() => {
+    const flush = () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (!pendingRef.current) return;
+      try {
+        localStorage.setItem(GUEST_ROUTE_KEY, pendingRef.current);
+      } catch {}
+      pendingRef.current = null;
     };
-  }, [state]);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      flush();
+    };
+  }, []);
 
   const clear = useCallback(() => {
     localStorage.removeItem(GUEST_ROUTE_KEY);

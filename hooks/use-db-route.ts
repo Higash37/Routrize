@@ -14,11 +14,15 @@ export function useDbRoute(
   state: RouteState & { dbId?: string },
   dispatch: React.Dispatch<{ type: "LOAD_ROUTE"; state: RouteState }>,
   setDbId: (id: string) => void,
+  skipLoad = false,
 ) {
   const { storeId, isLoaded } = useOrgContext();
-  const isInitialized = useRef(false);
+  const isInitialized = useRef(skipLoad);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevStateRef = useRef<string>("");
+  const pendingSaveRef = useRef<string | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // 初回: DB からカリキュラム一覧を取得して最新のものをロード
   useEffect(() => {
@@ -48,10 +52,11 @@ export function useDbRoute(
   }, [isLoaded, storeId, dispatch, setDbId]);
 
   // debounce で DB に保存
+  // ★ cleanup でタイマーを消さない（再レンダリングでタイマーが殺されるバグ防止）
+  //   タイマー管理は effect 内の clear + flush effect の unmount で行う
   useEffect(() => {
     if (!isInitialized.current || !storeId) return;
 
-    // 状態が変わっていなければスキップ
     const stateStr = JSON.stringify({
       title: state.title,
       startDate: state.startDate,
@@ -61,32 +66,55 @@ export function useDbRoute(
     if (stateStr === prevStateRef.current) return;
     prevStateRef.current = stateStr;
 
+    const body = JSON.stringify({
+      dbId: state.dbId || undefined,
+      storeId,
+      title: state.title,
+      startDate: state.startDate,
+      months: state.months,
+      items: state.items,
+    });
+    pendingSaveRef.current = body;
+
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
+      timerRef.current = null;
+      pendingSaveRef.current = null;
       try {
         const res = await fetch("/api/routes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            dbId: state.dbId || undefined,
-            storeId,
-            title: state.title,
-            startDate: state.startDate,
-            months: state.months,
-            items: state.items,
-          }),
+          body,
         });
         const data = await res.json();
-        if (data.id && !state.dbId) {
+        if (data.id && !stateRef.current.dbId) {
           setDbId(data.id);
         }
       } catch {
         // オフライン時は無視
       }
     }, DEBOUNCE_MS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, storeId, setDbId]);
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+  // ページ離脱・コンポーネントunmount時に未保存データをflush
+  useEffect(() => {
+    const flush = () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (!pendingSaveRef.current) return;
+      navigator.sendBeacon(
+        "/api/routes",
+        new Blob([pendingSaveRef.current], { type: "application/json" }),
+      );
+      pendingSaveRef.current = null;
     };
-  }, [state, storeId]);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      flush();
+    };
+  }, []);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useCallback, useMemo, useState } from "react";
+import { useReducer, useCallback, useEffect, useMemo, useState } from "react";
 import { routeReducer, INITIAL_ROUTE_STATE } from "@/lib/route-reducer";
 import { useLocalStorageRoute } from "@/hooks/use-local-storage-route";
 import { useDbRoute } from "@/hooks/use-db-route";
@@ -8,26 +8,55 @@ import { useAuth } from "@/hooks/use-auth";
 import { addMonths, getRouteDateRange, toISODate } from "@/lib/date-utils";
 import { SUBJECT_DEFAULT_COLORS, DEFAULT_ITEM_COLOR } from "@/lib/constants";
 import type { RegisteredBook } from "@/types/book";
+import type { RouteState } from "@/types/route-builder";
 import { RouteHeader } from "./route-header";
 import { BookListSidebar } from "./book-list-sidebar";
 import { RouteGantt } from "./route-gantt";
 import { ItemSettingsPanel } from "./item-settings-panel";
 import { MobileRouteCards } from "./mobile-route-cards";
 import { NavSidebar } from "@/components/shared/nav-sidebar";
+import { RouteDetailPage } from "./route-detail-page";
+import { BookPickerModal } from "./book-picker-modal";
+
+const SESSION_CACHE_KEY = "routrize:session-cache";
+
+// SPA内ナビゲーション用のメモリキャッシュ
+let memoryCache: { state: RouteState; dbId?: string } | null = null;
+
+/** リロード時はlocalStorageから復元、ナビゲーション時はメモリから復元 */
+function getInitialState(): { state: RouteState; dbId?: string; fromCache: boolean } {
+  // メモリキャッシュ（ナビゲーション復帰）
+  if (memoryCache) return { ...memoryCache, fromCache: true };
+  // localStorageキャッシュ（リロード復帰）
+  try {
+    const raw = localStorage.getItem(SESSION_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.state?.items) return { state: parsed.state, dbId: parsed.dbId, fromCache: true };
+    }
+  } catch {}
+  return { state: INITIAL_ROUTE_STATE, dbId: undefined, fromCache: false };
+}
 
 export function RouteBuilder() {
-  const [state, dispatch] = useReducer(routeReducer, INITIAL_ROUTE_STATE);
+  const [initial] = useState(getInitialState);
+  const [state, dispatch] = useReducer(routeReducer, initial.state);
   const [navOpen, setNavOpen] = useState(false);
-  const [dbId, setDbId] = useState<string | undefined>(undefined);
+  const [dbId, setDbId] = useState<string | undefined>(initial.dbId);
+  const [bookPickerOpen, setBookPickerOpen] = useState(false);
   const { isLoggedIn } = useAuth();
 
-  // ゲスト: localStorage、ログイン: DB
-  useLocalStorageRoute(state, dispatch);
-  useDbRoute(
-    { ...state, dbId },
-    dispatch,
-    setDbId,
-  );
+  // state 変更のたびにメモリキャッシュ + localStorage に即時保存
+  useEffect(() => {
+    memoryCache = { state, dbId };
+    try { localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({ state, dbId })); } catch {}
+  }, [state, dbId]);
+
+  // ゲスト: localStorage(guest-route)、ログイン: DB
+  // キャッシュ復帰時はDB/localStorageからの初回ロードをスキップ
+  useLocalStorageRoute(state, dispatch, initial.fromCache);
+  const dbRouteState = useMemo(() => ({ ...state, dbId }), [state, dbId]);
+  useDbRoute(dbRouteState, dispatch, setDbId, initial.fromCache);
 
   const selectedItem =
     state.items.find((i) => i.id === state.selectedItemId) ?? null;
@@ -81,6 +110,12 @@ export function RouteBuilder() {
   return (
     <div className="flex h-screen flex-col bg-slate-50">
       <NavSidebar isOpen={navOpen} onClose={() => setNavOpen(false)} />
+      <BookPickerModal
+        existingBookIds={state.items.map((i) => i.bookId)}
+        onAdd={handleAddBook}
+        open={bookPickerOpen}
+        onOpenChange={setBookPickerOpen}
+      />
       <div data-print-hide>
         <RouteHeader
           title={state.title}
@@ -94,7 +129,7 @@ export function RouteBuilder() {
       </div>
 
       {/* PC: サイドバー + ガント + 設定パネル */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
+      <div className="hidden md:flex flex-1 overflow-hidden" data-print-desktop>
         <div data-print-hide className="flex shrink-0">
           <BookListSidebar
             items={state.items}
@@ -111,6 +146,7 @@ export function RouteBuilder() {
           months={state.months}
           selectedItemId={state.selectedItemId}
           onSelectItem={handleSelectItem}
+          onAddClick={() => setBookPickerOpen(true)}
         />
 
         {selectedItem && (
@@ -132,8 +168,11 @@ export function RouteBuilder() {
         )}
       </div>
 
+      {/* 印刷裏面: 教材詳細カード */}
+      <RouteDetailPage items={state.items} title={state.title} />
+
       {/* モバイル: カードリスト + 設定パネル（フルスクリーン） */}
-      <div className="flex md:hidden flex-1 flex-col overflow-hidden">
+      <div className="flex md:hidden flex-1 flex-col overflow-hidden" data-print-mobile-hide>
         {selectedItem ? (
           <div className="flex-1 overflow-y-auto">
             <ItemSettingsPanel
