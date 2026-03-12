@@ -81,6 +81,14 @@ export async function GET(request: NextRequest) {
     itemMap.set(item.route_id, list);
   }
 
+  // オーナー情報を取得
+  const ownerIds = [...new Set(routes.map((r) => r.owner_user_id))];
+  const ownerMap = new Map<string, string>();
+  for (const id of ownerIds) {
+    const { data: { user } } = await admin.auth.admin.getUserById(id);
+    if (user) ownerMap.set(id, user.email ?? "");
+  }
+
   // ルートを組み立て
   const result = routes.map((r) => ({
     dbId: r.id,
@@ -90,6 +98,7 @@ export async function GET(request: NextRequest) {
     items: itemMap.get(r.id) ?? [],
     selectedItemId: null,
     ownerUserId: r.owner_user_id,
+    ownerEmail: ownerMap.get(r.owner_user_id) ?? "",
     isTemplate: r.is_template,
     createdAt: r.created_at,
     updatedAt: r.updated_at,

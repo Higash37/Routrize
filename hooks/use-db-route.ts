@@ -15,6 +15,7 @@ export function useDbRoute(
   dispatch: React.Dispatch<{ type: "LOAD_ROUTE"; state: RouteState }>,
   setDbId: (id: string) => void,
   skipLoad = false,
+  loadRouteId?: string | null,
 ) {
   const { storeId, isLoaded } = useOrgContext();
   const isInitialized = useRef(skipLoad);
@@ -34,22 +35,25 @@ export function useDbRoute(
       .then((data) => {
         const routes = data.routes ?? [];
         if (routes.length > 0) {
-          const latest = routes[0];
-          setDbId(latest.dbId);
+          // 特定ルートIDが指定されていればそれを、なければ最新をロード
+          const target = loadRouteId
+            ? routes.find((r: { dbId: string }) => r.dbId === loadRouteId) ?? routes[0]
+            : routes[0];
+          setDbId(target.dbId);
           dispatch({
             type: "LOAD_ROUTE",
             state: {
-              title: latest.title,
-              startDate: latest.startDate,
-              months: latest.months,
-              items: latest.items,
+              title: target.title,
+              startDate: target.startDate,
+              months: target.months,
+              items: target.items,
               selectedItemId: null,
             },
           });
         }
       })
       .catch(() => {});
-  }, [isLoaded, storeId, dispatch, setDbId]);
+  }, [isLoaded, storeId, dispatch, setDbId, loadRouteId]);
 
   // debounce で DB に保存
   // ★ cleanup でタイマーを消さない（再レンダリングでタイマーが殺されるバグ防止）

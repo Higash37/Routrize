@@ -2,12 +2,14 @@
 
 import { useLocalStorageBooks } from "./use-local-storage-books";
 import { useDbBooks } from "./use-db-books";
+import { useOrgContext } from "./use-org-context";
 import type { RegisteredBook } from "@/types/book";
 
 /** ログイン時はDB、ゲスト時はlocalStorageから教材を読み書きする統合フック */
 export function useBooks() {
   const ls = useLocalStorageBooks();
-  const db = useDbBooks();
+  const { organizationId: activeOrgId } = useOrgContext();
+  const db = useDbBooks(activeOrgId);
 
   // APIが完了するまではローディング
   if (!db.isLoaded) {

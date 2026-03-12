@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/** 認証 → 組織取得 → 教材取得 を1回で行う */
+/** 認証 → 同じ校舎のメンバーの教材も含めて取得 */
 export async function GET() {
   const supabase = await createClient();
-  // getSession()はcookieのJWTを読むだけで高速（getUser()はネットワーク往復~1秒）
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -16,23 +15,34 @@ export async function GET() {
 
   const admin = createAdminClient();
 
-  // 全メンバーシップ取得（複数組織に所属している場合がある）
-  const { data: memberships } = await admin
+  // 自分のメンバーシップ（org + store）を取得
+  const { data: myMemberships } = await admin
     .from("memberships")
-    .select("organization_id")
+    .select("organization_id, store_id")
     .eq("user_id", session.user.id);
 
-  if (!memberships || memberships.length === 0) {
+  if (!myMemberships || myMemberships.length === 0) {
     return NextResponse.json({ books: [], organizationId: null });
   }
 
-  const orgIds = [...new Set(memberships.map((m) => m.organization_id))];
+  const orgIds = [...new Set(myMemberships.map((m) => m.organization_id))];
+  const storeIds = [...new Set(myMemberships.map((m) => m.store_id))];
 
-  // 所属する全組織の教材を取得
+  // 同じ校舎にいる全ユーザーのIDを取得
+  const { data: storeMemberships } = await admin
+    .from("memberships")
+    .select("user_id")
+    .in("store_id", storeIds);
+
+  const coworkerIds = [...new Set((storeMemberships ?? []).map((m) => m.user_id))];
+
+  // 自分の組織の教材 OR 同じ校舎のメンバーが作成した教材
+  const orgIdList = orgIds.join(",");
+  const userIdList = coworkerIds.join(",");
   const { data: books } = await admin
     .from("books")
     .select("*")
-    .in("organization_id", orgIds)
+    .or(`organization_id.in.(${orgIdList}),creator_user_id.in.(${userIdList})`)
     .order("created_at", { ascending: false });
 
   const mapped = (books ?? []).map((b) => ({
@@ -56,6 +66,5 @@ export async function GET() {
     likeCount: b.like_count ?? 0,
   }));
 
-  // 最初の組織IDを返す（教材追加時のデフォルト）
   return NextResponse.json({ books: mapped, organizationId: orgIds[0] });
 }

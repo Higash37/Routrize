@@ -7,14 +7,16 @@ type AuthContextValue = {
   isLoggedIn: boolean;
   isLoading: boolean;
   email: string;
+  userId: string | null;
 };
 
-const AuthContext = createContext<AuthContextValue>({ isLoggedIn: false, isLoading: true, email: "" });
+const AuthContext = createContext<AuthContextValue>({ isLoggedIn: false, isLoading: true, email: "", userId: null });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsLoggedIn(!!session?.user);
       setEmail(session?.user?.email ?? "");
+      setUserId(session?.user?.id ?? null);
       setIsLoading(false);
     });
 
@@ -31,13 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session?.user);
       setEmail(session?.user?.email ?? "");
+      setUserId(session?.user?.id ?? null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, isLoading, email }}>
+    <AuthContext.Provider value={{ isLoggedIn, isLoading, email, userId }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useReducer, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { routeReducer, INITIAL_ROUTE_STATE } from "@/lib/route-reducer";
 import { useLocalStorageRoute } from "@/hooks/use-local-storage-route";
 import { useDbRoute } from "@/hooks/use-db-route";
@@ -24,7 +25,9 @@ const SESSION_CACHE_KEY = "routrize:session-cache";
 let memoryCache: { state: RouteState; dbId?: string } | null = null;
 
 /** リロード時はlocalStorageから復元、ナビゲーション時はメモリから復元 */
-function getInitialState(): { state: RouteState; dbId?: string; fromCache: boolean } {
+function getInitialState(routeId?: string | null): { state: RouteState; dbId?: string; fromCache: boolean } {
+  // 特定ルート指定時はキャッシュをスキップしてDBからロード
+  if (routeId) return { state: INITIAL_ROUTE_STATE, dbId: undefined, fromCache: false };
   // メモリキャッシュ（ナビゲーション復帰）
   if (memoryCache) return { ...memoryCache, fromCache: true };
   // localStorageキャッシュ（リロード復帰）
@@ -39,7 +42,9 @@ function getInitialState(): { state: RouteState; dbId?: string; fromCache: boole
 }
 
 export function RouteBuilder() {
-  const [initial] = useState(getInitialState);
+  const searchParams = useSearchParams();
+  const routeIdParam = searchParams.get("routeId");
+  const [initial] = useState(() => getInitialState(routeIdParam));
   const [state, dispatch] = useReducer(routeReducer, initial.state);
   const [navOpen, setNavOpen] = useState(false);
   const [dbId, setDbId] = useState<string | undefined>(initial.dbId);
@@ -56,7 +61,7 @@ export function RouteBuilder() {
   // キャッシュ復帰時はDB/localStorageからの初回ロードをスキップ
   useLocalStorageRoute(state, dispatch, initial.fromCache);
   const dbRouteState = useMemo(() => ({ ...state, dbId }), [state, dbId]);
-  useDbRoute(dbRouteState, dispatch, setDbId, initial.fromCache);
+  useDbRoute(dbRouteState, dispatch, setDbId, initial.fromCache, routeIdParam);
 
   const selectedItem =
     state.items.find((i) => i.id === state.selectedItemId) ?? null;
