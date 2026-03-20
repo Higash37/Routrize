@@ -151,5 +151,7 @@ body {
     print-color-adjust: exact !important;
   }
 
+
   /* @page は印刷時に動的注入（A4/A3切替対応） */
 }
+

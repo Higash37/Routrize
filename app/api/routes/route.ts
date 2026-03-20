@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
     startDate: r.start_date,
     months: r.months,
     items: itemMap.get(r.id) ?? [],
+    eventLanes: r.events ?? [],
     selectedItemId: null,
     ownerUserId: r.owner_user_id,
     ownerEmail: ownerMap.get(r.owner_user_id) ?? "",
@@ -130,6 +131,7 @@ export async function POST(request: NextRequest) {
         title: body.title,
         start_date: body.startDate,
         months: body.months,
+        events: body.eventLanes ?? [],
         updated_at: now,
       })
       .eq("id", body.dbId);
@@ -148,6 +150,7 @@ export async function POST(request: NextRequest) {
         title: body.title,
         start_date: body.startDate,
         months: body.months,
+        events: body.eventLanes ?? [],
         is_template: false,
       })
       .select("id")

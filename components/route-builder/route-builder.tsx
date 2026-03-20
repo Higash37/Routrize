@@ -35,7 +35,7 @@ function getInitialState(routeId?: string | null): { state: RouteState; dbId?: s
     const raw = localStorage.getItem(SESSION_CACHE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed?.state?.items) return { state: parsed.state, dbId: parsed.dbId, fromCache: true };
+      if (parsed?.state?.items) return { state: { ...parsed.state, eventLanes: parsed.state.eventLanes ?? [] }, dbId: parsed.dbId, fromCache: true };
     }
   } catch {}
   return { state: INITIAL_ROUTE_STATE, dbId: undefined, fromCache: false };
@@ -49,6 +49,9 @@ export function RouteBuilder() {
   const [navOpen, setNavOpen] = useState(false);
   const [dbId, setDbId] = useState<string | undefined>(initial.dbId);
   const [bookPickerOpen, setBookPickerOpen] = useState(false);
+  const [studentName, setStudentName] = useState("");
+  const [studentGrade, setStudentGrade] = useState("");
+  const [studentSchool, setStudentSchool] = useState("");
   const { isLoggedIn } = useAuth();
 
   // state 変更のたびにメモリキャッシュ + localStorage に即時保存
@@ -83,15 +86,15 @@ export function RouteBuilder() {
           bookId: book.id,
           title: book.title,
           subject: book.subject,
-          fields: [],
+          fields: book.fields ?? [],
           color: SUBJECT_DEFAULT_COLORS[book.subject] ?? DEFAULT_ITEM_COLOR,
-          targetGrade: "",
-          tags: [],
+          targetGrade: book.targetGrade ?? "",
+          tags: book.tags ?? [],
           difficulty: 3,
           importance: 3,
           memo: "",
-          totalPages: 0,
-          chapters: [],
+          totalPages: book.totalPages ?? 0,
+          chapters: book.chapters ?? [],
           targetRounds: 1,
           subtasks: [],
           coverImageUrl: book.coverImageUrl,
@@ -130,6 +133,12 @@ export function RouteBuilder() {
           onStartDateChange={(date) => dispatch({ type: "SET_START_DATE", date })}
           onMonthsChange={(months) => dispatch({ type: "SET_MONTHS", months })}
           onMenuOpen={() => setNavOpen(true)}
+          studentName={studentName}
+          studentGrade={studentGrade}
+          studentSchool={studentSchool}
+          onStudentNameChange={setStudentName}
+          onStudentGradeChange={setStudentGrade}
+          onStudentSchoolChange={setStudentSchool}
         />
       </div>
 
@@ -147,11 +156,22 @@ export function RouteBuilder() {
 
         <RouteGantt
           items={state.items}
+          eventLanes={state.eventLanes ?? []}
           startDate={state.startDate}
           months={state.months}
+          title={state.title}
+          studentName={studentName}
+          studentGrade={studentGrade}
+          studentSchool={studentSchool}
           selectedItemId={state.selectedItemId}
           onSelectItem={handleSelectItem}
           onAddClick={() => setBookPickerOpen(true)}
+          onAddEventLane={(lane) => dispatch({ type: "ADD_EVENT_LANE", lane })}
+          onUpdateEventLane={(laneId, label) => dispatch({ type: "UPDATE_EVENT_LANE", laneId, label })}
+          onRemoveEventLane={(laneId) => dispatch({ type: "REMOVE_EVENT_LANE", laneId })}
+          onAddLaneEvent={(laneId, event) => dispatch({ type: "ADD_LANE_EVENT", laneId, event })}
+          onUpdateLaneEvent={(laneId, eventId, changes) => dispatch({ type: "UPDATE_LANE_EVENT", laneId, eventId, changes })}
+          onRemoveLaneEvent={(laneId, eventId) => dispatch({ type: "REMOVE_LANE_EVENT", laneId, eventId })}
         />
 
         {selectedItem && (

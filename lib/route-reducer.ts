@@ -6,6 +6,7 @@ export const INITIAL_ROUTE_STATE: RouteState = {
   startDate: thisMonthFirst(),
   months: 12,
   items: [],
+  eventLanes: [],
   selectedItemId: null,
 };
 
@@ -60,8 +61,48 @@ export function routeReducer(state: RouteState, action: RouteAction): RouteState
     case "SELECT_ITEM":
       return { ...state, selectedItemId: action.itemId };
 
+    case "ADD_EVENT_LANE":
+      return { ...state, eventLanes: [...(state.eventLanes ?? []), action.lane] };
+
+    case "UPDATE_EVENT_LANE":
+      return {
+        ...state,
+        eventLanes: (state.eventLanes ?? []).map((l) =>
+          l.id === action.laneId ? { ...l, label: action.label } : l,
+        ),
+      };
+
+    case "REMOVE_EVENT_LANE":
+      return { ...state, eventLanes: (state.eventLanes ?? []).filter((l) => l.id !== action.laneId) };
+
+    case "ADD_LANE_EVENT":
+      return {
+        ...state,
+        eventLanes: (state.eventLanes ?? []).map((l) =>
+          l.id === action.laneId ? { ...l, events: [...l.events, action.event] } : l,
+        ),
+      };
+
+    case "UPDATE_LANE_EVENT":
+      return {
+        ...state,
+        eventLanes: (state.eventLanes ?? []).map((l) =>
+          l.id === action.laneId
+            ? { ...l, events: l.events.map((e) => (e.id === action.eventId ? { ...e, ...action.changes } : e)) }
+            : l,
+        ),
+      };
+
+    case "REMOVE_LANE_EVENT":
+      return {
+        ...state,
+        eventLanes: (state.eventLanes ?? []).map((l) =>
+          l.id === action.laneId ? { ...l, events: l.events.filter((e) => e.id !== action.eventId) } : l,
+        ),
+      };
+
     case "LOAD_ROUTE":
-      return action.state;
+      return { ...action.state, eventLanes: action.state.eventLanes ?? [] };
 
     default:
       return state;

@@ -16,6 +16,12 @@ type RouteHeaderProps = {
   onStartDateChange: (date: string) => void;
   onMonthsChange: (months: number) => void;
   onMenuOpen: () => void;
+  studentName: string;
+  studentGrade: string;
+  studentSchool: string;
+  onStudentNameChange: (v: string) => void;
+  onStudentGradeChange: (v: string) => void;
+  onStudentSchoolChange: (v: string) => void;
 };
 
 export function RouteHeader({
@@ -26,6 +32,12 @@ export function RouteHeader({
   onStartDateChange,
   onMonthsChange,
   onMenuOpen,
+  studentName,
+  studentGrade,
+  studentSchool,
+  onStudentNameChange,
+  onStudentGradeChange,
+  onStudentSchoolChange,
 }: RouteHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [paperSize, setPaperSize] = useState<"A4" | "A3">("A4");
@@ -125,6 +137,54 @@ export function RouteHeader({
         <div className="mx-1 h-5 w-px bg-border shrink-0 hidden sm:block" />
 
         <div className="hidden sm:flex items-center gap-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <span className="shrink-0">名前</span>
+              <input
+                type="text"
+                value={studentName ?? ""}
+                onChange={(e) => onStudentNameChange(e.target.value)}
+                placeholder="生徒名"
+                className="h-7 w-24 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="shrink-0">学年</span>
+              <select
+                value={studentGrade ?? ""}
+                onChange={(e) => onStudentGradeChange(e.target.value)}
+                className="h-7 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+              >
+                <option value="">--</option>
+                <option value="小1">小1</option>
+                <option value="小2">小2</option>
+                <option value="小3">小3</option>
+                <option value="小4">小4</option>
+                <option value="小5">小5</option>
+                <option value="小6">小6</option>
+                <option value="中1">中1</option>
+                <option value="中2">中2</option>
+                <option value="中3">中3</option>
+                <option value="高1">高1</option>
+                <option value="高2">高2</option>
+                <option value="高3">高3</option>
+                <option value="既卒">既卒</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="shrink-0">学校</span>
+              <input
+                type="text"
+                value={studentSchool ?? ""}
+                onChange={(e) => onStudentSchoolChange(e.target.value)}
+                placeholder="学校名"
+                className="h-7 w-24 rounded border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#4472C4]"
+              />
+            </div>
+          </div>
+
+          <div className="mx-1 h-5 w-px bg-border shrink-0" />
+
           <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" disabled>
             <FileText className="h-3.5 w-3.5" />
             PDF

@@ -22,8 +22,6 @@ export function useDbRoute(
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevStateRef = useRef<string>("");
   const pendingSaveRef = useRef<string | null>(null);
-  const stateRef = useRef(state);
-  stateRef.current = state;
 
   // 初回: DB からカリキュラム一覧を取得して最新のものをロード
   useEffect(() => {
@@ -37,7 +35,8 @@ export function useDbRoute(
         if (routes.length > 0) {
           // 特定ルートIDが指定されていればそれを、なければ最新をロード
           const target = loadRouteId
-            ? routes.find((r: { dbId: string }) => r.dbId === loadRouteId) ?? routes[0]
+            ? (routes.find((r: { dbId: string }) => r.dbId === loadRouteId) ??
+              routes[0])
             : routes[0];
           setDbId(target.dbId);
           dispatch({
@@ -47,6 +46,7 @@ export function useDbRoute(
               startDate: target.startDate,
               months: target.months,
               items: target.items,
+              eventLanes: target.eventLanes ?? [],
               selectedItemId: null,
             },
           });
@@ -66,6 +66,7 @@ export function useDbRoute(
       startDate: state.startDate,
       months: state.months,
       items: state.items,
+      eventLanes: state.eventLanes,
     });
     if (stateStr === prevStateRef.current) return;
     prevStateRef.current = stateStr;
@@ -77,6 +78,7 @@ export function useDbRoute(
       startDate: state.startDate,
       months: state.months,
       items: state.items,
+      eventLanes: state.eventLanes,
     });
     pendingSaveRef.current = body;
 
@@ -91,14 +93,13 @@ export function useDbRoute(
           body,
         });
         const data = await res.json();
-        if (data.id && !stateRef.current.dbId) {
+        if (data.id && !state.dbId) {
           setDbId(data.id);
         }
       } catch {
         // オフライン時は無視
       }
     }, DEBOUNCE_MS);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, storeId, setDbId]);
 
   // ページ離脱・コンポーネントunmount時に未保存データをflush

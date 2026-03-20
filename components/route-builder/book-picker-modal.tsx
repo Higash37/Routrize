@@ -19,6 +19,7 @@ type BookPickerModalProps = {
   onAdd: (book: RegisteredBook) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
 };
 
 export function BookPickerModal({
@@ -26,6 +27,7 @@ export function BookPickerModal({
   onAdd,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  trigger,
 }: BookPickerModalProps) {
   const { books } = useBooks();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -57,13 +59,15 @@ export function BookPickerModal({
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
         <DialogTrigger asChild>
-          <button
-            type="button"
-            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <Plus className="h-3 w-3" />
-            追加
-          </button>
+          {trigger ?? (
+            <button
+              type="button"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Plus className="h-3 w-3" />
+              追加
+            </button>
+          )}
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-md">

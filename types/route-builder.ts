@@ -44,11 +44,26 @@ export type RouteItemState = {
   endDate: string;
 };
 
+export type RouteEvent = {
+  id: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+  color: string;
+};
+
+export type EventLane = {
+  id: string;
+  label: string;
+  events: RouteEvent[];
+};
+
 export type RouteState = {
   title: string;
   startDate: string;
   months: number;
   items: RouteItemState[];
+  eventLanes: EventLane[];
   selectedItemId: string | null;
 };
 
@@ -63,4 +78,10 @@ export type RouteAction =
   | { type: "UPDATE_ITEM"; itemId: string; changes: RouteItemUpdatable }
   | { type: "REORDER_ITEMS"; itemIds: string[] }
   | { type: "SELECT_ITEM"; itemId: string | null }
+  | { type: "ADD_EVENT_LANE"; lane: EventLane }
+  | { type: "UPDATE_EVENT_LANE"; laneId: string; label: string }
+  | { type: "REMOVE_EVENT_LANE"; laneId: string }
+  | { type: "ADD_LANE_EVENT"; laneId: string; event: RouteEvent }
+  | { type: "UPDATE_LANE_EVENT"; laneId: string; eventId: string; changes: Partial<RouteEvent> }
+  | { type: "REMOVE_LANE_EVENT"; laneId: string; eventId: string }
   | { type: "LOAD_ROUTE"; state: RouteState };
